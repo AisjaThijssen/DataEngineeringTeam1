@@ -9,7 +9,7 @@
            ]
       },
       {
-          "name": "gcr.io/$PROJECT_ID/pipline_executor:0.0.1",
+          "name": "gcr.io/$PROJECT_ID/pipeline_executor:0.0.1",
           "args": [
               "--name=iris-predictor-pipeline",           
               "--pipeline_def=./CICD_pipeline/iris_predictor_training_pipeline.json",
