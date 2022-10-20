@@ -1,0 +1,6 @@
+{
+  "project_id": "deassignement1",
+  "data_bucket": "data-group1",
+  "trainset_filename": "Iris.csv",
+  "model_repo": "model-repository-group1"
+}
