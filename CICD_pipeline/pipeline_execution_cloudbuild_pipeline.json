@@ -1,21 +1,21 @@
 {
- "steps": [
-  {
-       "name": "gcr.io/cloud-builders/gsutil",
-       "args": [
-           "cp",           
-		   "gs://data_aisja/parameters.json",
-           ".",
-        ]
-   },
-   {
-       "name": "gcr.io/$PROJECT_ID/pipline_executor:0.0.1",
-       "args": [
-           "--name=diabetes-predictor-pipeline",           
-		   "--pipeline_def=./lab4/diabetes_prdictor_training_pipeline.json",
-           "--pipeline_root=gs://de_jads_temp_aisja",         
-		   "--parameter_dict=./parameters.json"
-        ]
-   }
-   ]
- }
+    "steps": [
+     {
+          "name": "gcr.io/cloud-builders/gsutil",
+          "args": [
+              "cp",           
+              "gs://data-group1/parameters.json",
+              ".",
+           ]
+      },
+      {
+          "name": "gcr.io/$PROJECT_ID/pipeline_executor:0.0.1",
+          "args": [
+              "--name=iris-predictor-pipeline",           
+              "--pipeline_def=./CICD_pipeline/iris_predictor_training_pipeline.json",
+              "--pipeline_root=gs://temp-storage-group1",         
+              "--parameter_dict=./parameters.json"
+           ]
+      }
+    ]
+}
