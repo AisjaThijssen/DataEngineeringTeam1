@@ -4,7 +4,7 @@
        "name": "gcr.io/cloud-builders/gsutil",
        "args": [
            "cp",
-		   "gs://model-repository-group1/model.h5",
+		   "gs://model-repository-group1/DecisionTree.pkl",
            "./Prediction_api_ui"
         ]
     },
