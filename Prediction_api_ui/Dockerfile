@@ -16,4 +16,4 @@ ENV MODEL_NAME=DecisionTree.pkl
 #Vm is label niet per se nodig
 LABEL training.db.api="0.0.1-beta"
 
-CMD ["python1", "app.py"]
+CMD ["python3", "app.py"]
