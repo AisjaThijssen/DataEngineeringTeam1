@@ -1,0 +1,58 @@
+{
+  "steps": [
+	{
+       "name": "gcr.io/cloud-builders/gsutil",
+       "args": [
+           "cp",
+		   "gs://model-repository-group1/model.h5",
+           "./Prediction_api_ui"
+        ]
+    },
+    {
+      "name": "python",
+      "entrypoint": "/bin/sh",
+      "args": [
+        "-c",
+        "cd ./Prediction_api_ui && python -m venv .myenv && . .myenv/bin/activate && pip install -r requirements.txt",
+        "--user"
+      ]
+    },
+    {
+      "name": "gcr.io/cloud-builders/docker",
+      "args": [
+        "build",
+        "-t",
+        "gcr.io/$PROJECT_ID/prediction-ui-embedded-gcs:0.0.1",
+        "./Prediction_api_ui"
+      ]
+    },
+    {
+      "name": "gcr.io/cloud-builders/docker",
+      "args": [
+        "push",
+        "gcr.io/$PROJECT_ID/prediction-ui-embedded-gcs:0.0.1"
+      ]
+    },
+    {
+      "name": "gcr.io/google.com/cloudsdktool/cloud-sdk",
+      "entrypoint": "gcloud",
+       "args": [
+        "run",
+        "deploy",
+        "prediction-service",
+        "--image",
+        "gcr.io/$PROJECT_ID/prediction-ui-embedded-gcs:0.0.1",
+        "--region",
+        "us-central1",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated",
+        "--update-env-vars",
+        "PROJECT_ID=MODEL_NAME=your_model_name",
+        "--no-cpu-throttling",
+        "--memory",
+        "4 Gi"
+      ]
+    }
+  ]
+}

@@ -11,7 +11,7 @@ COPY . .
 EXPOSE 5000
 
 #TODO: Controleren of de environment variables goed zijn
-ENV PREDICTOR_API=http://predictor-api-server:5000/iris_predictor
+ENV MODEL_NAME=DecisionTree.pkl
 
 #Vm is label niet per se nodig
 LABEL training.db.api="0.0.1-beta"
