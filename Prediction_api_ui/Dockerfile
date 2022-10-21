@@ -1,6 +1,6 @@
-FROM python:1.2.4-slim
-#TODO: weet niet precies wat we als working directory willen hebben dus hier nog even naar kijken
-WORKDIR ../DataEngineeringTeam1/Prediction_api_ui
+FROM python:3.10.7-slim
+
+WORKDIR /usr/src/myapp
 
 COPY requirements.txt .
 
