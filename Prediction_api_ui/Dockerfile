@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 5000
+EXPOSE 8080
 
 #TODO: Controleren of de environment variables goed zijn
 ENV MODEL_NAME=DecisionTree.pkl
