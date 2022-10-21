@@ -5,10 +5,6 @@ app = Flask(__name__)
 from Classifier import  MyClassifier
 app.secret_key = 'any random string'
 
-@app.route('/')
-def student():
-   return render_template('leaf.html')
-
 @app.route('/result',methods = ['POST', 'GET'])
 def result():
    if request.method == 'POST':
@@ -21,6 +17,7 @@ def result():
       result1=ob.predict(list1=inputlist)
       session['result'] = str(result1)
       return render_template("prediction.html", result = result)
+
    return render_template("leaf.html")
 
 if __name__ == '__main__':
