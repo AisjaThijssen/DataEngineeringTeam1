@@ -19,6 +19,13 @@ def result():
       ob=MyClassifier()
       result1=ob.predict(list1=inputlist)
       session['result'] = str(result1)
+      if 'Iris-setosa' in str(result1):
+         session['picture'] = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Irissetosa1.jpg/800px-Irissetosa1.jpg"
+      if 'Iris-versicolor' in str(result1):
+         session['picture'] = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Blue_Flag%2C_Ottawa.jpg/220px-Blue_Flag%2C_Ottawa.jpg"
+      if 'Iris-virginica' in str(result1):
+            session['picture'] = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Iris_virginica_2.jpg/220px-Iris_virginica_2.jpg"
+
       return render_template("prediction.html",result = result)
 
 if __name__ == '__main__':
