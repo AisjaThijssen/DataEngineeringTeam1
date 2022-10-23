@@ -1,6 +1,118 @@
 {
   "pipelineSpec": {
     "components": {
+      "comp-compare-model": {
+        "executorLabel": "exec-compare-model",
+        "inputDefinitions": {
+          "parameters": {
+            "dt_metric": {
+              "type": "STRING"
+            },
+            "rf_metric": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "parameters": {
+            "Output": {
+              "type": "STRING"
+            }
+          }
+        }
+      },
+      "comp-condition-1": {
+        "dag": {
+          "tasks": {
+            "predict-decision-tree": {
+              "cachingOptions": {
+                "enableCache": true
+              },
+              "componentRef": {
+                "name": "comp-predict-decision-tree"
+              },
+              "inputs": {
+                "parameters": {
+                  "features": {
+                    "componentInputParameter": "pipelineparam--make-train-test-split-test_data"
+                  },
+                  "model_repo": {
+                    "componentInputParameter": "pipelineparam--model_repo"
+                  },
+                  "project_id": {
+                    "componentInputParameter": "pipelineparam--project_id"
+                  }
+                }
+              },
+              "taskInfo": {
+                "name": "predict-decision-tree"
+              }
+            }
+          }
+        },
+        "inputDefinitions": {
+          "parameters": {
+            "pipelineparam--compare-model-Output": {
+              "type": "STRING"
+            },
+            "pipelineparam--make-train-test-split-test_data": {
+              "type": "STRING"
+            },
+            "pipelineparam--model_repo": {
+              "type": "STRING"
+            },
+            "pipelineparam--project_id": {
+              "type": "STRING"
+            }
+          }
+        }
+      },
+      "comp-condition-2": {
+        "dag": {
+          "tasks": {
+            "predict-random-forest": {
+              "cachingOptions": {
+                "enableCache": true
+              },
+              "componentRef": {
+                "name": "comp-predict-random-forest"
+              },
+              "inputs": {
+                "parameters": {
+                  "features": {
+                    "componentInputParameter": "pipelineparam--make-train-test-split-test_data"
+                  },
+                  "model_repo": {
+                    "componentInputParameter": "pipelineparam--model_repo"
+                  },
+                  "project_id": {
+                    "componentInputParameter": "pipelineparam--project_id"
+                  }
+                }
+              },
+              "taskInfo": {
+                "name": "predict-random-forest"
+              }
+            }
+          }
+        },
+        "inputDefinitions": {
+          "parameters": {
+            "pipelineparam--compare-model-Output": {
+              "type": "STRING"
+            },
+            "pipelineparam--make-train-test-split-test_data": {
+              "type": "STRING"
+            },
+            "pipelineparam--model_repo": {
+              "type": "STRING"
+            },
+            "pipelineparam--project_id": {
+              "type": "STRING"
+            }
+          }
+        }
+      },
       "comp-download-data": {
         "executorLabel": "exec-download-data",
         "inputDefinitions": {
@@ -9,6 +121,72 @@
               "type": "STRING"
             },
             "file_name": {
+              "type": "STRING"
+            },
+            "project_id": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "parameters": {
+            "Output": {
+              "type": "STRING"
+            }
+          }
+        }
+      },
+      "comp-make-train-test-split": {
+        "executorLabel": "exec-make-train-test-split",
+        "inputDefinitions": {
+          "parameters": {
+            "input_data": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "parameters": {
+            "test_data": {
+              "type": "STRING"
+            },
+            "train_data": {
+              "type": "STRING"
+            }
+          }
+        }
+      },
+      "comp-predict-decision-tree": {
+        "executorLabel": "exec-predict-decision-tree",
+        "inputDefinitions": {
+          "parameters": {
+            "features": {
+              "type": "STRING"
+            },
+            "model_repo": {
+              "type": "STRING"
+            },
+            "project_id": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "parameters": {
+            "Output": {
+              "type": "STRING"
+            }
+          }
+        }
+      },
+      "comp-predict-random-forest": {
+        "executorLabel": "exec-predict-random-forest",
+        "inputDefinitions": {
+          "parameters": {
+            "features": {
+              "type": "STRING"
+            },
+            "model_repo": {
               "type": "STRING"
             },
             "project_id": {
@@ -46,10 +224,52 @@
             }
           }
         }
+      },
+      "comp-train-random-forest": {
+        "executorLabel": "exec-train-random-forest",
+        "inputDefinitions": {
+          "parameters": {
+            "features": {
+              "type": "STRING"
+            },
+            "model_repo": {
+              "type": "STRING"
+            },
+            "project_id": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "parameters": {
+            "Output": {
+              "type": "STRING"
+            }
+          }
+        }
       }
     },
     "deploymentSpec": {
       "executors": {
+        "exec-compare-model": {
+          "container": {
+            "args": [
+              "--dt-metric",
+              "{{$.inputs.parameters['dt_metric']}}",
+              "--rf-metric",
+              "{{$.inputs.parameters['rf_metric']}}",
+              "----output-paths",
+              "{{$.outputs.parameters['Output'].output_file}}"
+            ],
+            "command": [
+              "sh",
+              "-ec",
+              "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3 -u \"$program_path\" \"$@\"\n",
+              "def compare_model(dt_metric, rf_metric):\n    import logging\n    import json\n    import sys\n    logging.basicConfig(stream=sys.stdout, level=logging.INFO)\n    logging.info(dt_metric)\n    logging.info(rf_metric)\n    if dt_metric.get(\"accuracy\") > rf_metric.get(\"accuracy\"):\n        return \"DT\"\n    else :\n        return \"RF\"\n\ndef _serialize_str(str_value: str) -> str:\n    if not isinstance(str_value, str):\n        raise TypeError('Value \"{}\" has type \"{}\" instead of str.'.format(\n            str(str_value), str(type(str_value))))\n    return str_value\n\nimport json\nimport argparse\n_parser = argparse.ArgumentParser(prog='Compare model', description='')\n_parser.add_argument(\"--dt-metric\", dest=\"dt_metric\", type=json.loads, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--rf-metric\", dest=\"rf_metric\", type=json.loads, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\", dest=\"_output_paths\", type=str, nargs=1)\n_parsed_args = vars(_parser.parse_args())\n_output_files = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = compare_model(**_parsed_args)\n\n_outputs = [_outputs]\n\n_output_serializers = [\n    _serialize_str,\n\n]\n\nimport os\nfor idx, output_file in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n    except OSError:\n        pass\n    with open(output_file, 'w') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"
+            ],
+            "image": "python:3.7"
+          }
+        },
         "exec-download-data": {
           "container": {
             "args": [
@@ -70,6 +290,75 @@
               "-ec",
               "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3 -u \"$program_path\" \"$@\"\n",
               "def download_data(project_id, bucket, file_name):\n    '''download data'''\n    from google.cloud import storage\n    import pandas as pd\n    import logging \n    import sys\n\n    logging.basicConfig(stream=sys.stdout, level=logging.INFO)\n\n    client = storage.Client(project=project_id)\n    bucket = client.get_bucket(bucket)\n    blob = bucket.blob(file_name)\n    local_path = '/tmp/'+ file_name\n    blob.download_to_filename(local_path)\n    logging.info('Downloaded Data!')\n\n    # Convert the data to a dictiory object    \n    dict_from_csv = pd.read_csv(local_path, index_col=\"Id\", squeeze=True).to_dict()\n    logging.info('Returning Data as Dictionary Object!')\n    return dict_from_csv\n\ndef _serialize_json(obj) -> str:\n    if isinstance(obj, str):\n        return obj\n    import json\n\n    def default_serializer(obj):\n        if hasattr(obj, 'to_struct'):\n            return obj.to_struct()\n        else:\n            raise TypeError(\n                \"Object of type '%s' is not JSON serializable and does not have .to_struct() method.\"\n                % obj.__class__.__name__)\n\n    return json.dumps(obj, default=default_serializer, sort_keys=True)\n\nimport argparse\n_parser = argparse.ArgumentParser(prog='Download data', description='download data')\n_parser.add_argument(\"--project-id\", dest=\"project_id\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--bucket\", dest=\"bucket\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--file-name\", dest=\"file_name\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\", dest=\"_output_paths\", type=str, nargs=1)\n_parsed_args = vars(_parser.parse_args())\n_output_files = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = download_data(**_parsed_args)\n\n_outputs = [_outputs]\n\n_output_serializers = [\n    _serialize_json,\n\n]\n\nimport os\nfor idx, output_file in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n    except OSError:\n        pass\n    with open(output_file, 'w') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"
+            ],
+            "image": "python:3.7"
+          }
+        },
+        "exec-make-train-test-split": {
+          "container": {
+            "args": [
+              "--input-data",
+              "{{$.inputs.parameters['input_data']}}",
+              "----output-paths",
+              "{{$.outputs.parameters['train_data'].output_file}}",
+              "{{$.outputs.parameters['test_data'].output_file}}"
+            ],
+            "command": [
+              "sh",
+              "-c",
+              "(PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'scikit-learn' 'pandas' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'scikit-learn' 'pandas' --user) && \"$0\" \"$@\"",
+              "sh",
+              "-ec",
+              "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3 -u \"$program_path\" \"$@\"\n",
+              "def make_train_test_split(input_data):\n    import pandas as pd\n    from sklearn.model_selection import train_test_split\n    import logging\n    import sys\n\n    logging.basicConfig(stream=sys.stdout, level=logging.INFO)\n\n    data = pd.DataFrame.from_dict(input_data) \n\n    train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)\n\n    logging.info(\"make train test split\")\n\n    from collections import namedtuple\n    example_output = namedtuple(\n      'Outputs',\n      ['train_data', 'test_data'])\n    return example_output(train_data.to_dict(), test_data.to_dict())\n\ndef _serialize_json(obj) -> str:\n    if isinstance(obj, str):\n        return obj\n    import json\n\n    def default_serializer(obj):\n        if hasattr(obj, 'to_struct'):\n            return obj.to_struct()\n        else:\n            raise TypeError(\n                \"Object of type '%s' is not JSON serializable and does not have .to_struct() method.\"\n                % obj.__class__.__name__)\n\n    return json.dumps(obj, default=default_serializer, sort_keys=True)\n\nimport json\nimport argparse\n_parser = argparse.ArgumentParser(prog='Make train test split', description='')\n_parser.add_argument(\"--input-data\", dest=\"input_data\", type=json.loads, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\", dest=\"_output_paths\", type=str, nargs=2)\n_parsed_args = vars(_parser.parse_args())\n_output_files = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = make_train_test_split(**_parsed_args)\n\n_output_serializers = [\n    _serialize_json,\n    _serialize_json,\n\n]\n\nimport os\nfor idx, output_file in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n    except OSError:\n        pass\n    with open(output_file, 'w') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"
+            ],
+            "image": "python:3.7"
+          }
+        },
+        "exec-predict-decision-tree": {
+          "container": {
+            "args": [
+              "--project-id",
+              "{{$.inputs.parameters['project_id']}}",
+              "--model-repo",
+              "{{$.inputs.parameters['model_repo']}}",
+              "--features",
+              "{{$.inputs.parameters['features']}}",
+              "----output-paths",
+              "{{$.outputs.parameters['Output'].output_file}}"
+            ],
+            "command": [
+              "sh",
+              "-c",
+              "(PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'google-cloud-storage' 'pandas' 'joblib' 'scikit-learn' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'google-cloud-storage' 'pandas' 'joblib' 'scikit-learn' --user) && \"$0\" \"$@\"",
+              "sh",
+              "-ec",
+              "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3 -u \"$program_path\" \"$@\"\n",
+              "def predict_decision_tree(project_id, model_repo, features):\n    import pandas as pd\n    import joblib\n    from google.cloud import storage\n    import json\n    import logging\n    import sys\n    import os\n\n    logging.basicConfig(stream=sys.stdout, level=logging.INFO)\n\n    df = pd.DataFrame.from_dict(features)    \n\n    client = storage.Client(project=project_id)\n    bucket = client.get_bucket(model_repo)\n    blob = bucket.blob('DecisionTree.pkl')\n    filename = '/tmp/DecisionTree.pkl'\n    blob.download_to_filename(filename)\n\n    #Loading the saved model with joblib\n    model = joblib.load(filename)\n\n    xNew = df[['SepalLengthCm','SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']]\n\n    dfcp = df.copy()   \n    y_classes = model.predict(xNew)\n    logging.info(y_classes)\n    dfcp['pclass'] = y_classes.tolist()\n    dic = dfcp.to_dict(orient='records') \n    return dic\n\ndef _serialize_json(obj) -> str:\n    if isinstance(obj, str):\n        return obj\n    import json\n\n    def default_serializer(obj):\n        if hasattr(obj, 'to_struct'):\n            return obj.to_struct()\n        else:\n            raise TypeError(\n                \"Object of type '%s' is not JSON serializable and does not have .to_struct() method.\"\n                % obj.__class__.__name__)\n\n    return json.dumps(obj, default=default_serializer, sort_keys=True)\n\nimport json\nimport argparse\n_parser = argparse.ArgumentParser(prog='Predict decision tree', description='')\n_parser.add_argument(\"--project-id\", dest=\"project_id\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--model-repo\", dest=\"model_repo\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--features\", dest=\"features\", type=json.loads, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\", dest=\"_output_paths\", type=str, nargs=1)\n_parsed_args = vars(_parser.parse_args())\n_output_files = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = predict_decision_tree(**_parsed_args)\n\n_outputs = [_outputs]\n\n_output_serializers = [\n    _serialize_json,\n\n]\n\nimport os\nfor idx, output_file in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n    except OSError:\n        pass\n    with open(output_file, 'w') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"
+            ],
+            "image": "python:3.7"
+          }
+        },
+        "exec-predict-random-forest": {
+          "container": {
+            "args": [
+              "--project-id",
+              "{{$.inputs.parameters['project_id']}}",
+              "--model-repo",
+              "{{$.inputs.parameters['model_repo']}}",
+              "--features",
+              "{{$.inputs.parameters['features']}}",
+              "----output-paths",
+              "{{$.outputs.parameters['Output'].output_file}}"
+            ],
+            "command": [
+              "sh",
+              "-c",
+              "(PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'google-cloud-storage' 'pandas' 'joblib' 'scikit-learn' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'google-cloud-storage' 'pandas' 'joblib' 'scikit-learn' --user) && \"$0\" \"$@\"",
+              "sh",
+              "-ec",
+              "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3 -u \"$program_path\" \"$@\"\n",
+              "def predict_random_forest(project_id, model_repo, features):\n    import pandas as pd\n    import joblib\n    from google.cloud import storage\n    import json\n    import logging\n    import sys\n    import os\n\n    logging.basicConfig(stream=sys.stdout, level=logging.INFO)\n\n    df = pd.DataFrame.from_dict(features)    \n\n    client = storage.Client(project=project_id)\n    bucket = client.get_bucket(model_repo)\n    blob = bucket.blob('RandomForest.pkl')\n    filename = '/tmp/RandomForest.pkl'\n    blob.download_to_filename(filename)\n\n    #Loading the saved model with joblib\n    model = joblib.load(filename)\n\n    xNew = df[['SepalLengthCm','SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']]\n\n    dfcp = df.copy()   \n    y_classes = model.predict(xNew)\n    logging.info(y_classes)\n    dfcp['pclass'] = y_classes.tolist()\n    dic = dfcp.to_dict(orient='records') \n    return dic\n\ndef _serialize_json(obj) -> str:\n    if isinstance(obj, str):\n        return obj\n    import json\n\n    def default_serializer(obj):\n        if hasattr(obj, 'to_struct'):\n            return obj.to_struct()\n        else:\n            raise TypeError(\n                \"Object of type '%s' is not JSON serializable and does not have .to_struct() method.\"\n                % obj.__class__.__name__)\n\n    return json.dumps(obj, default=default_serializer, sort_keys=True)\n\nimport json\nimport argparse\n_parser = argparse.ArgumentParser(prog='Predict random forest', description='')\n_parser.add_argument(\"--project-id\", dest=\"project_id\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--model-repo\", dest=\"model_repo\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--features\", dest=\"features\", type=json.loads, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\", dest=\"_output_paths\", type=str, nargs=1)\n_parsed_args = vars(_parser.parse_args())\n_output_files = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = predict_random_forest(**_parsed_args)\n\n_outputs = [_outputs]\n\n_output_serializers = [\n    _serialize_json,\n\n]\n\nimport os\nfor idx, output_file in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n    except OSError:\n        pass\n    with open(output_file, 'w') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"
             ],
             "image": "python:3.7"
           }
@@ -97,6 +386,30 @@
             ],
             "image": "python:3.7"
           }
+        },
+        "exec-train-random-forest": {
+          "container": {
+            "args": [
+              "--features",
+              "{{$.inputs.parameters['features']}}",
+              "--project-id",
+              "{{$.inputs.parameters['project_id']}}",
+              "--model-repo",
+              "{{$.inputs.parameters['model_repo']}}",
+              "----output-paths",
+              "{{$.outputs.parameters['Output'].output_file}}"
+            ],
+            "command": [
+              "sh",
+              "-c",
+              "(PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'google-cloud-storage' 'pandas' 'joblib' 'scikit-learn' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'google-cloud-storage' 'pandas' 'joblib' 'scikit-learn' --user) && \"$0\" \"$@\"",
+              "sh",
+              "-ec",
+              "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3 -u \"$program_path\" \"$@\"\n",
+              "def train_random_forest (features, project_id, model_repo):\n    '''train a Random Forest with default parameters'''\n    import pandas as pd\n    from google.cloud import storage\n    from sklearn.ensemble import RandomForestClassifier\n    import json\n    import logging \n    import sys\n    import os\n    import joblib\n\n    logging.basicConfig(stream=sys.stdout, level=logging.INFO)\n\n    df = pd.DataFrame.from_dict(features)  \n\n    logging.info(df.columns)\n\n    # split into input (X) and output (Y) variables\n    X = df.loc[:, ['SepalLengthCm','SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']].values\n    y = df.loc[:, ['Species']].values\n\n    # define model\n    random_forest_classifier = RandomForestClassifier()\n    random_forest_classifier.fit(X, y)\n\n    # evaluate the model\n    score = random_forest_classifier.score(X, y)\n    logging.info(\"accuracy\")\n    metrics = {\n        \"accuracy\": score,\n    }\n\n    # Save the model localy\n    local_file = '/tmp/RandomForest.pkl'\n    joblib.dump(random_forest_classifier, local_file)\n     # write out output\n\n    # Save to GCS as model.h5\n    client = storage.Client(project=project_id)\n    bucket = client.get_bucket(model_repo)\n    blob = bucket.blob('RandomForest.pkl')\n    # Upload the locally saved model\n    blob.upload_from_filename(local_file)\n\n    print(\"Saved the model to GCP bucket : \" + model_repo)\n    return metrics\n\ndef _serialize_json(obj) -> str:\n    if isinstance(obj, str):\n        return obj\n    import json\n\n    def default_serializer(obj):\n        if hasattr(obj, 'to_struct'):\n            return obj.to_struct()\n        else:\n            raise TypeError(\n                \"Object of type '%s' is not JSON serializable and does not have .to_struct() method.\"\n                % obj.__class__.__name__)\n\n    return json.dumps(obj, default=default_serializer, sort_keys=True)\n\nimport json\nimport argparse\n_parser = argparse.ArgumentParser(prog='Train random forest', description='train a Random Forest with default parameters')\n_parser.add_argument(\"--features\", dest=\"features\", type=json.loads, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--project-id\", dest=\"project_id\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--model-repo\", dest=\"model_repo\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\", dest=\"_output_paths\", type=str, nargs=1)\n_parsed_args = vars(_parser.parse_args())\n_output_files = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = train_random_forest(**_parsed_args)\n\n_outputs = [_outputs]\n\n_output_serializers = [\n    _serialize_json,\n\n]\n\nimport os\nfor idx, output_file in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n    except OSError:\n        pass\n    with open(output_file, 'w') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"
+            ],
+            "image": "python:3.7"
+          }
         }
       }
     },
@@ -106,6 +419,111 @@
     "root": {
       "dag": {
         "tasks": {
+          "compare-model": {
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-compare-model"
+            },
+            "dependentTasks": [
+              "train-decision-tree",
+              "train-random-forest"
+            ],
+            "inputs": {
+              "parameters": {
+                "dt_metric": {
+                  "taskOutputParameter": {
+                    "outputParameterKey": "Output",
+                    "producerTask": "train-decision-tree"
+                  }
+                },
+                "rf_metric": {
+                  "taskOutputParameter": {
+                    "outputParameterKey": "Output",
+                    "producerTask": "train-random-forest"
+                  }
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "compare-model"
+            }
+          },
+          "condition-1": {
+            "componentRef": {
+              "name": "comp-condition-1"
+            },
+            "dependentTasks": [
+              "compare-model",
+              "make-train-test-split"
+            ],
+            "inputs": {
+              "parameters": {
+                "pipelineparam--compare-model-Output": {
+                  "taskOutputParameter": {
+                    "outputParameterKey": "Output",
+                    "producerTask": "compare-model"
+                  }
+                },
+                "pipelineparam--make-train-test-split-test_data": {
+                  "taskOutputParameter": {
+                    "outputParameterKey": "test_data",
+                    "producerTask": "make-train-test-split"
+                  }
+                },
+                "pipelineparam--model_repo": {
+                  "componentInputParameter": "model_repo"
+                },
+                "pipelineparam--project_id": {
+                  "componentInputParameter": "project_id"
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "condition-1"
+            },
+            "triggerPolicy": {
+              "condition": "inputs.parameters['pipelineparam--compare-model-Output'].string_value == 'DT'"
+            }
+          },
+          "condition-2": {
+            "componentRef": {
+              "name": "comp-condition-2"
+            },
+            "dependentTasks": [
+              "compare-model",
+              "make-train-test-split"
+            ],
+            "inputs": {
+              "parameters": {
+                "pipelineparam--compare-model-Output": {
+                  "taskOutputParameter": {
+                    "outputParameterKey": "Output",
+                    "producerTask": "compare-model"
+                  }
+                },
+                "pipelineparam--make-train-test-split-test_data": {
+                  "taskOutputParameter": {
+                    "outputParameterKey": "test_data",
+                    "producerTask": "make-train-test-split"
+                  }
+                },
+                "pipelineparam--model_repo": {
+                  "componentInputParameter": "model_repo"
+                },
+                "pipelineparam--project_id": {
+                  "componentInputParameter": "project_id"
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "condition-2"
+            },
+            "triggerPolicy": {
+              "condition": "inputs.parameters['pipelineparam--compare-model-Output'].string_value == 'RF'"
+            }
+          },
           "download-data": {
             "cachingOptions": {
               "enableCache": true
@@ -130,6 +548,30 @@
               "name": "download-data"
             }
           },
+          "make-train-test-split": {
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-make-train-test-split"
+            },
+            "dependentTasks": [
+              "download-data"
+            ],
+            "inputs": {
+              "parameters": {
+                "input_data": {
+                  "taskOutputParameter": {
+                    "outputParameterKey": "Output",
+                    "producerTask": "download-data"
+                  }
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "make-train-test-split"
+            }
+          },
           "train-decision-tree": {
             "cachingOptions": {
               "enableCache": true
@@ -138,14 +580,14 @@
               "name": "comp-train-decision-tree"
             },
             "dependentTasks": [
-              "download-data"
+              "make-train-test-split"
             ],
             "inputs": {
               "parameters": {
                 "features": {
                   "taskOutputParameter": {
-                    "outputParameterKey": "Output",
-                    "producerTask": "download-data"
+                    "outputParameterKey": "train_data",
+                    "producerTask": "make-train-test-split"
                   }
                 },
                 "model_repo": {
@@ -158,6 +600,36 @@
             },
             "taskInfo": {
               "name": "train-decision-tree"
+            }
+          },
+          "train-random-forest": {
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-train-random-forest"
+            },
+            "dependentTasks": [
+              "make-train-test-split"
+            ],
+            "inputs": {
+              "parameters": {
+                "features": {
+                  "taskOutputParameter": {
+                    "outputParameterKey": "train_data",
+                    "producerTask": "make-train-test-split"
+                  }
+                },
+                "model_repo": {
+                  "componentInputParameter": "model_repo"
+                },
+                "project_id": {
+                  "componentInputParameter": "project_id"
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "train-random-forest"
             }
           }
         }
