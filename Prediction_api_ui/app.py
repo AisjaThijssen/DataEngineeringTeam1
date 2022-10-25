@@ -3,7 +3,7 @@ import os
 from flask import Flask, render_template, request, session
 
 app = Flask(__name__)
-from Classifier import  MyClassifier
+from Classifier import  IrisClassifier
 app.secret_key = 'any random string'
 
 @app.route('/')
@@ -18,7 +18,7 @@ def result():
       c = float(request.form['petal-length'])
       d = float(request.form['petal-width'])
       inputlist=[a,b,c,d]
-      ob=MyClassifier()
+      ob=IrisClassifier()
       result1=ob.predict(list1=inputlist)
       session['result'] = str(result1)
       if 'Iris-setosa' in str(result1):

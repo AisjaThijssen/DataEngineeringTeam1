@@ -1,7 +1,7 @@
 import os
 import joblib
 
-class MyClassifier:
+class IrisClassifier:
 
     def __init__(self):
         self.model = None
