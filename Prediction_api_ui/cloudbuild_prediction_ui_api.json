@@ -4,7 +4,7 @@
        "name": "gcr.io/cloud-builders/gsutil",
        "args": [
            "cp",
-		   "gs://model-repository-group1/RandomForest.pkl",
+		   "gs://model-repository-group1/BestModel.pkl",
            "./Prediction_api_ui"
         ]
     },
@@ -48,7 +48,7 @@
         "managed",
         "--allow-unauthenticated",
         "--update-env-vars",
-        "MODEL_NAME=RandomForest.pkl",
+        "MODEL_NAME=BestModel.pkl",
         "--no-cpu-throttling",
         "--memory",
         "4 Gi"
