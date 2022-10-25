@@ -4,12 +4,12 @@
        "name": "gcr.io/cloud-builders/gsutil",
        "args": [
            "cp",
-		   "gs://model-repository-group1/DecisionTree.pkl",
+		   "gs://model-repository-group1/BestModel.pkl",
            "./Prediction_api_ui"
         ]
     },
     {
-      "name": "python",
+      "name": "python:3.10.8-slim-buster",
       "entrypoint": "/bin/sh",
       "args": [
         "-c",
@@ -48,7 +48,7 @@
         "managed",
         "--allow-unauthenticated",
         "--update-env-vars",
-        "MODEL_NAME=DecisionTree.pkl",
+        "MODEL_NAME=BestModel.pkl",
         "--no-cpu-throttling",
         "--memory",
         "4 Gi"
